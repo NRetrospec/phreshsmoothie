@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phresh Smoothie</title>
+<style>
+  html, body { margin:0; padding:0; background:#0b0b14; height:100%; overflow:hidden; }
+  #wrap { display:flex; align-items:center; justify-content:center; height:100vh; }
+  canvas { image-rendering: pixelated; image-rendering: crisp-edges;
+           max-width:100vw; max-height:100vh; aspect-ratio:16/9;
+           box-shadow:0 0 60px rgba(255,60,180,.25); }
+</style>
+</head>
+<body>
+<div id="wrap"><canvas id="game" width="960" height="540"></canvas></div>
+<script type="module" src="src/main.js"></script>
+</body>
+</html>
