@@ -1,7 +1,7 @@
 // App bootstrap + scene manager + fixed-timestep loop.
 import { CONFIG } from './config.js';
 import { loadAll } from './engine/assets.js';
-import { initInput, endFrame } from './engine/input.js';
+import { initInput, endFrame, pollGamepads, pad } from './engine/input.js';
 import { GameScene } from './game/scene.js';
 import { MenuScene, ComicScene, HowToScene, PerkScene, GameOverScene } from './game/screens.js';
 import { newRun, advanceRound, saveBest } from './game/run.js';
@@ -44,6 +44,7 @@ let last = performance.now();
 function frame(now) {
   const dt = Math.min((now - last) / 1000, 1 / 20); // clamp huge dt (tab switch)
   last = now;
+  pollGamepads(dt);
   if (app.scene) {
     app.scene.update(dt);
     app.scene.draw(ctx);
@@ -59,6 +60,14 @@ function frame(now) {
     ctx.font = '16px monospace';
     ctx.textAlign = 'center';
     ctx.fillText('blending...', 480, 300);
+  }
+  if (pad.toastT > 0) {
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, pad.toastT);
+    ctx.font = '14px monospace'; ctx.textAlign = 'right'; ctx.textBaseline = 'top';
+    ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(CONFIG.CANVAS_W - 360, 8, 352, 26);
+    ctx.fillStyle = '#7cffb2'; ctx.fillText(pad.toast, CONFIG.CANVAS_W - 16, 14);
+    ctx.restore();
   }
   endFrame();
   requestAnimationFrame(frame);

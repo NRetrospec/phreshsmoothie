@@ -262,7 +262,7 @@ export class HowToScene {
       'L or V ............. dash',
       'TAB or R ........... swap hero (partner takes over if one drops)',
       'E .................. smoothie special (shared meter, hero-specific)',
-      '',
+      'GAMEPAD: stick/D-pad move, A jump, X/RT shoot, B roll, Y/LT dash, LB swap, RB special, Start pause',
       'PHRESH: fast shots. Special = BURP BLAST (big circle nuke).',
       'QUE: shotgun spread, slower. Special = BLAST SHOT (piercing slug).',
       'Each hero has their own hearts. Both down = run over.',

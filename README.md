@@ -34,6 +34,22 @@ python -m http.server 8093
 | E | smoothie special (needs full fruit meter): Phresh = BURP BLAST, Que = BLAST SHOT |
 | Esc | pause / skip comic |
 
+### Gamepad / Bluetooth controller
+
+Any controller the browser's Gamepad API sees works - Xbox, PlayStation, Switch Pro, 8BitDo, etc., wired or Bluetooth. Pair it with your OS first (Windows: Settings > Bluetooth & devices; macOS: System Settings > Bluetooth), open the game, and press any button (browsers hide the pad until you do). A green toast confirms the connection.
+
+| Controller | Action |
+|---|---|
+| Left stick / D-pad | move (light tilt = walk, full tilt = run) |
+| A (Cross) | jump; confirm in menus; perk 1 |
+| Down + A | drop through platforms |
+| X (Square) / RT | shoot; perk 3 |
+| B (Circle) | roll; perk 2 |
+| Y (Triangle) / LT | dash |
+| LB / Back | swap hero |
+| RB | smoothie special |
+| Start | pause / skip comic |
+
 ## Heroes
 
 - **Phresh** - fast single shots. Special: burp blast (big AoE nuke).
