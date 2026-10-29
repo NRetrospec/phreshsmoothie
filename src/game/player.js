@@ -1,12 +1,19 @@
 // Player controller: walk/run/jump/roll/dash/shoot with coyote time,
 // jump buffering, jump-cut, apex float. Fluid by design.
+// One class, two heroes: C.CHARACTERS[id] decides weapon + special. The squad
+// shares the smoothie meter / score / power-ups (`team`); hp is per hero.
 import { CONFIG as C } from '../config.js';
 import { Animator } from '../engine/animator.js';
 import { moveAndCollide } from '../engine/physics.js';
 import { isDown, wasPressed } from '../engine/input.js';
+import { maxHpOf } from './run.js';
 
 export class Player {
-  constructor(x, y) {
+  constructor(id, x, y, run, team) {
+    this.id = id;
+    this.cfg = C.CHARACTERS[id];
+    this.run = run;       // perk modifiers
+    this.team = team;     // shared { fruits, score, power }
     this.x = x; this.y = y;
     this.w = C.PLAYER_W; this.h = C.PLAYER_H;
     this.vx = 0; this.vy = 0;
@@ -16,16 +23,14 @@ export class Player {
     this.dashT = 0; this.dashCd = 0;
     this.rollT = 0; this.rollCd = 0;
     this.shootCd = 0;
-    this.hp = C.PLAYER_MAX_HP;
+    this.maxHp = maxHpOf(run, id);
+    this.hp = Math.min(run.hp[id], this.maxHp);
     this.invuln = 0;
     this.hurtFlash = 0;
     this.wasAirborne = false;
-    this.anim = new Animator();
-    // power-up state
-    this.power = { protein: 0, sneakers: 0, shield: false };
-    this.fruits = 0;       // smoothie meter
-    this.score = 0;
-    this.dead = false;
+    this.anim = new Animator(id);
+    this.power = team.power;
+    this.dead = this.hp <= 0;
   }
 
   get rolling() { return this.rollT > 0; }
@@ -34,7 +39,7 @@ export class Player {
   get feetY() { return this.y + this.h; }
 
   update(dt, game) {
-    const spdMult = this.power.sneakers > 0 ? 1.35 : 1;
+    const spdMult = (this.power.sneakers > 0 ? 1.35 : 1) * this.run.mods.speed;
     for (const k of ['protein', 'sneakers']) if (this.power[k] > 0) this.power[k] -= dt;
     if (this.invuln > 0) this.invuln -= dt;
     if (this.hurtFlash > 0) this.hurtFlash -= dt;
@@ -102,18 +107,39 @@ export class Player {
     }
 
     // --- shoot ---
+    const dmgMult = (this.power.protein > 0 ? 2 : 1) * this.run.mods.damage;
+    const muzzleX = this.feetX + this.facing * 26, muzzleY = this.y + this.h * 0.42;
     if (isDown('shoot') && this.shootCd <= 0 && !this.rolling && !this.dashing) {
-      this.shootCd = C.SHOOT_COOLDOWN;
+      this.shootCd = this.cfg.shootCd * this.run.mods.fireRate;
       this.anim.play('shoot', true);
-      const dmg = C.BULLET_DAMAGE * (this.power.protein > 0 ? 2 : 1);
-      game.spawnBullet(this.feetX + this.facing * 26, this.y + this.h * 0.42,
-                       C.BULLET_SPEED * this.facing, dmg);
+      if (this.id === 'que') {
+        // shotgun: a fan of short-lived pellets, kick back a little
+        const n = this.cfg.pellets;
+        for (let i = 0; i < n; i++) {
+          const a = (i / (n - 1) - 0.5) * 2 * this.cfg.spread + (Math.random() - 0.5) * 0.06;
+          const sp = this.cfg.pelletSpeed * (0.92 + Math.random() * 0.16);
+          game.spawnBullet(muzzleX, muzzleY, Math.cos(a) * sp * this.facing, this.cfg.pelletDamage * dmgMult,
+                           { vy: Math.sin(a) * sp, life: this.cfg.pelletLife, r: 4 });
+        }
+        game.fx.hit(muzzleX + this.facing * 10, muzzleY, '#ffb347');
+        if (!this.dashing) this.vx -= this.facing * this.cfg.recoil;
+        game.shake(3, 0.1);
+      } else {
+        game.spawnBullet(muzzleX, muzzleY, C.BULLET_SPEED * this.facing, C.BULLET_DAMAGE * dmgMult);
+      }
     }
 
-    // --- smoothie burp blast ---
-    if (wasPressed('drink') && this.fruits >= C.SMOOTHIE_MAX) {
-      this.fruits = 0;
-      game.burpBlast(this.feetX, this.y + this.h / 2);
+    // --- special (spends the shared smoothie meter) ---
+    if (wasPressed('drink') && this.team.fruits >= game.smoothieNeed) {
+      this.team.fruits = 0;
+      if (this.cfg.special === 'blast') {
+        this.shootCd = Math.max(this.shootCd, 0.5);
+        this.anim.play('shoot', true);
+        this.vx -= this.facing * 420;
+        game.spawnBlast(muzzleX + this.facing * 10, muzzleY, this.facing, C.BLAST_DAMAGE * this.run.mods.damage);
+      } else {
+        game.burpBlast(this.feetX, this.y + this.h / 2);
+      }
     }
 
     // --- physics ---
@@ -148,7 +174,18 @@ export class Player {
     this.anim.update(dt);
 
     // world bounds / death pit
-    if (this.y > game.level.h + 200) this.hurt(99, game);
+    if (this.y > game.level.h + 200) { this.hp = 0; this.dead = true; } // pits ignore i-frames
+  }
+
+  // Take over from `from` mid-action: same spot, same momentum.
+  tagIn(from, invuln) {
+    this.x = from.x; this.y = from.y; this.vx = from.vx; this.vy = from.vy;
+    this.facing = from.facing; this.onGround = from.onGround;
+    this.coyote = from.coyote; this.jumpBuf = 0; this.dropTimer = 0;
+    this.dashT = 0; this.rollT = 0; this.shootCd = 0.15;
+    this.invuln = Math.max(this.invuln, invuln);
+    this.anim = new Animator(this.id);
+    this.wasAirborne = !from.onGround;
   }
 
   hurt(dmg, game, fromX) {

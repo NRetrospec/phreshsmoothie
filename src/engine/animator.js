@@ -14,7 +14,7 @@ const DEFS = {
 };
 
 export class Animator {
-  constructor() { this.anim = 'idle'; this.t = 0; this.doneFlag = false; }
+  constructor(charId = 'phresh') { this.char = charId; this.anim = 'idle'; this.t = 0; this.doneFlag = false; }
 
   play(anim, restart = false) {
     if (anim === this.anim && !restart) return;
@@ -26,7 +26,7 @@ export class Animator {
 
   update(dt) {
     const def = DEFS[this.anim];
-    const frames = animFrames(this.anim);
+    const frames = animFrames(this.char, this.anim);
     this.t += dt * def.fps;
     const n = frames.length;
     if (def.mode === 'loop') { this.t %= n; }
@@ -36,14 +36,14 @@ export class Animator {
   get done() { return this.doneFlag; }
 
   frame() {
-    const frames = animFrames(this.anim);
+    const frames = animFrames(this.char, this.anim);
     return frames[Math.min(Math.floor(this.t), frames.length - 1)];
   }
 
   // draw anchored at feet position (x = feet center, y = feet), facing +1/-1
   draw(ctx, x, y, facing) {
     const name = this.frame();
-    const img = frameImg(name), m = frameMeta(name);
+    const img = frameImg(this.char, name), m = frameMeta(this.char, name);
     if (!img) return;
     ctx.save();
     if (facing < 0) {

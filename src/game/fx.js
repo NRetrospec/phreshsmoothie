@@ -13,6 +13,10 @@ export class FX {
   dashBurst(x, y, dir) {
     this.spawn(10, () => ({ x, y: y + (Math.random() - 0.5) * 40, vx: -dir * (120 + Math.random() * 160), vy: (Math.random() - 0.5) * 60, life: 0.28, t: 0, r: 4 + Math.random() * 4, color: 'rgba(120,220,255,0.8)' }));
   }
+  // tag-team swap poof
+  tag(x, y, color) {
+    this.spawn(18, () => { const a = Math.random() * Math.PI * 2, sp = 100 + Math.random() * 220; return { x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 0.4, t: 0, r: 3 + Math.random() * 4, color }; });
+  }
   hit(x, y, color = '#fff') {
     this.spawn(8, () => { const a = Math.random() * Math.PI * 2, s = 120 + Math.random() * 180; return { x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 0.3, t: 0, r: 3 + Math.random() * 3, color }; });
   }

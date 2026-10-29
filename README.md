@@ -30,8 +30,23 @@ python -m http.server 8093
 | J / X | shoot |
 | K / C | roll (i-frames, damages enemies) |
 | L / V | dash |
-| E | drink smoothie -> BURP BLAST (needs full fruit meter) |
+| TAB / R | swap hero (the partner also auto-tags in when one drops) |
+| E | smoothie special (needs full fruit meter): Phresh = BURP BLAST, Que = BLAST SHOT |
 | Esc | pause / skip comic |
+
+## Heroes
+
+- **Phresh** - fast single shots. Special: burp blast (big AoE nuke).
+- **Que** - shotgun, 5-pellet spread, slower fire. Special: blast shot (huge piercing slug).
+- Each has their own hearts; fruit meter, score and power-ups are shared. Both down = run over.
+
+## Roguelite loop
+
+Clear the level, pick 1 of 3 perks, and it comes back harder: tougher/faster
+enemies, more of them, and the platforms re-roll (wider pits, thinner and
+farther-apart platforms, moving platforms from round 3, extra pits and blocks).
+Survivors heal a heart, a fallen hero revives at 1 heart. Best round/score is
+saved in localStorage. Tuning: `CONFIG.ROUND`, `CONFIG.CHARACTERS`, `src/game/run.js`.
 
 ## Game systems
 
@@ -52,7 +67,7 @@ index.html            entry
 src/config.js         every tunable number (also window.CONFIG for live tuning)
 src/engine/           assets, input, animator, physics (AABB + one-way platforms)
 src/game/             player, enemies, pickups, fx, level1, scene, screens
-assets/sprites/player sliced + scaled character frames (from Public/ sheets)
+assets/sprites/player, que  sliced + scaled character frames (from Public/ sheets)
 assets/level1         parallax layers + ground tile (AI-generated)
 assets/enemies        banana/raisin/melon frames (AI-generated)
 assets/comic          6 intro panels (AI-generated)

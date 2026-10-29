@@ -3,7 +3,8 @@ import { CONFIG } from './config.js';
 import { loadAll } from './engine/assets.js';
 import { initInput, endFrame } from './engine/input.js';
 import { GameScene } from './game/scene.js';
-import { MenuScene, ComicScene, HowToScene, WinScene } from './game/screens.js';
+import { MenuScene, ComicScene, HowToScene, PerkScene, GameOverScene } from './game/screens.js';
+import { newRun, advanceRound, saveBest } from './game/run.js';
 
 window.CONFIG = CONFIG; // live tuning from devtools
 
@@ -13,12 +14,18 @@ ctx.imageSmoothingEnabled = false;
 
 const app = {
   scene: null,
+  run: null,                 // roguelite run state (see game/run.js)
   showMenu() { this.scene = new MenuScene(this); },
-  startComic() { this.scene = new ComicScene(this); },
-  startLevel() { this.scene = new GameScene(this); },
-  restartLevel() { this.scene = new GameScene(this); },
+  startComic() { this.run = newRun(); this.scene = new ComicScene(this); },
+  startLevel() { if (!this.run) this.run = newRun(); this.scene = new GameScene(this); },
   showHowTo() { this.scene = new HowToScene(this); },
-  showWin(score, time, kills) { this.scene = new WinScene(this, score, time, kills); },
+  showPerks() { this.scene = new PerkScene(this); },
+  pickPerk(perk) { advanceRound(this.run, perk); this.startLevel(); },
+  endRun() {
+    const { record } = saveBest(this.run);
+    this.scene = new GameOverScene(this, this.run, record);
+  },
+  retryRun() { this.run = newRun(); this.startLevel(); },
 };
 window.app = app; // test hook
 

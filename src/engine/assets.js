@@ -1,6 +1,8 @@
-// Asset loader: images + player frames manifest.
+// Asset loader: images + per-character frame manifests.
 export const IMAGES = {};
-export let FRAMES = null;   // { frames: {name:{w,h,ax,ay}}, anims: {anim:[names]} }
+export const CHAR_DIRS = { phresh: 'assets/sprites/player', que: 'assets/sprites/que' };
+// FRAMES[charId] = { frames: {name:{w,h,ax,ay}}, anims: {anim:[names]} }
+export const FRAMES = {};
 
 function loadImage(src) {
   return new Promise((res, rej) => {
@@ -12,15 +14,16 @@ function loadImage(src) {
 }
 
 export async function loadAll(onProgress) {
-  FRAMES = await (await fetch('assets/sprites/player/frames.json')).json();
   const jobs = [];
-  const names = Object.keys(FRAMES.frames);
   const optional = new Set();
   const add = (key, src, opt = false) => {
     if (opt) optional.add(key);
     jobs.push([key, src]);
   };
-  for (const n of names) add('p_' + n, `assets/sprites/player/${n}.png`);
+  for (const [id, dir] of Object.entries(CHAR_DIRS)) {
+    FRAMES[id] = await (await fetch(`${dir}/frames.json`)).json();
+    for (const n of Object.keys(FRAMES[id].frames)) add(`${id}_${n}`, `${dir}/${n}.png`);
+  }
 
   // UI (shipped with repo)
   add('menu_bg', 'Public/PS MENU.png');
@@ -54,6 +57,6 @@ export async function loadAll(onProgress) {
   }));
 }
 
-export function frameImg(name) { return IMAGES['p_' + name]; }
-export function frameMeta(name) { return FRAMES.frames[name]; }
-export function animFrames(anim) { return FRAMES.anims[anim]; }
+export function frameImg(id, name) { return IMAGES[`${id}_${name}`]; }
+export function frameMeta(id, name) { return FRAMES[id].frames[name]; }
+export function animFrames(id, anim) { return FRAMES[id].anims[anim]; }

@@ -14,6 +14,8 @@ const KEYMAP = {
   KeyL: 'dash', KeyV: 'dash',
   ShiftLeft: 'runmod', ShiftRight: 'runmod',
   KeyE: 'drink', KeyQ: 'drink',
+  Tab: 'swap', KeyR: 'swap',
+  Digit1: 'pick1', Digit2: 'pick2', Digit3: 'pick3',
   Enter: 'confirm', Escape: 'pause',
 };
 

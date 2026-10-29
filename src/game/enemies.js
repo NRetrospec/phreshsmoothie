@@ -5,10 +5,12 @@ import { IMAGES } from '../engine/assets.js';
 import { moveAndCollide, aabb } from '../engine/physics.js';
 
 let nextId = 1;
+const EASY = { hp: 1, speed: 1, fireRate: 1, touch: 1 };  // round 1
 
 class Enemy {
-  constructor(x, y, w, h) {
+  constructor(x, y, w, h, diff = EASY) {
     this.id = nextId++;
+    this.diff = diff;
     this.x = x; this.y = y; this.w = w; this.h = h;
     this.vx = 0; this.vy = 0; this.onGround = false;
     this.dead = false; this.frozen = 0; this.hitFlash = 0; this.t = Math.random() * 10;
@@ -54,9 +56,9 @@ class Enemy {
 }
 
 export class Banana extends Enemy {
-  constructor(x, y) {
-    super(x, y, 34, 62);
-    this.hp = C.BANANA_HP;
+  constructor(x, y, diff) {
+    super(x, y, 34, 62, diff);
+    this.hp = Math.ceil(C.BANANA_HP * this.diff.hp);
     this.type = 'banana';
     this.panic = 0;
   }
@@ -68,12 +70,12 @@ export class Banana extends Enemy {
       if (near) this.panic = 1.2;
       if (this.panic > 0) {
         this.panic -= dt;
-        this.vx = -Math.sign(dx || 1) * C.BANANA_FLEE_SPEED; // run AWAY
+        this.vx = -Math.sign(dx || 1) * C.BANANA_FLEE_SPEED * this.diff.speed; // run AWAY
         // hop over obstacles / randomly while panicking
         if (this.onGround && Math.random() < 0.02) this.vy = -560;
       } else {
         // lazy wander
-        if (Math.floor(this.t) % 4 === 0) this.vx = Math.sin(this.t * 0.7) > 0 ? C.BANANA_WANDER_SPEED : -C.BANANA_WANDER_SPEED;
+        if (Math.floor(this.t) % 4 === 0) this.vx = (Math.sin(this.t * 0.7) > 0 ? C.BANANA_WANDER_SPEED : -C.BANANA_WANDER_SPEED) * this.diff.speed;
         else this.vx = 0;
       }
       // don't run off level edges
@@ -103,11 +105,11 @@ export class Banana extends Enemy {
 }
 
 export class Raisin extends Enemy {
-  constructor(x, y) {
-    super(x, y, 40, 44);
-    this.hp = C.RAISIN_HP;
+  constructor(x, y, diff) {
+    super(x, y, 40, 44, diff);
+    this.hp = Math.ceil(C.RAISIN_HP * this.diff.hp);
     this.type = 'raisin';
-    this.cd = Math.random() * C.RAISIN_FIRE_COOLDOWN;
+    this.cd = Math.random() * C.RAISIN_FIRE_COOLDOWN / this.diff.fireRate;
     this.shootPose = 0;
   }
   update(dt, game) {
@@ -119,7 +121,7 @@ export class Raisin extends Enemy {
       this.cd -= dt;
       const dist = Math.hypot(p.feetX - this.cx, p.feetY - this.cy);
       if (this.cd <= 0 && dist < C.RAISIN_RANGE) {
-        this.cd = C.RAISIN_FIRE_COOLDOWN;
+        this.cd = C.RAISIN_FIRE_COOLDOWN / this.diff.fireRate;
         this.shootPose = 0.3;
         // lob a seed at the player
         const t = 0.75;
@@ -148,9 +150,9 @@ export class Raisin extends Enemy {
 }
 
 export class Melon extends Enemy {
-  constructor(x, y) {
-    super(x, y, 86, 76);
-    this.hp = C.MELON_HP;
+  constructor(x, y, diff) {
+    super(x, y, 86, 76, diff);
+    this.hp = Math.ceil(C.MELON_HP * this.diff.hp);
     this.type = 'melon';
     this.state = 'pace'; this.stateT = 0;
   }
@@ -160,13 +162,13 @@ export class Melon extends Enemy {
       const p = game.player;
       const dx = p.feetX - this.cx;
       if (this.state === 'pace') {
-        this.vx = Math.sign(Math.sin(this.t * 0.8)) * C.MELON_SPEED;
+        this.vx = Math.sign(Math.sin(this.t * 0.8)) * C.MELON_SPEED * this.diff.speed;
         if (Math.abs(dx) < 380 && this.stateT > 1.4) { this.state = 'windup'; this.stateT = 0; this.vx = 0; this.facing = Math.sign(dx || 1); }
       } else if (this.state === 'windup') {
         this.vx = 0;
         if (this.stateT > 0.5) { this.state = 'charge'; this.stateT = 0; }
       } else if (this.state === 'charge') {
-        this.vx = this.facing * C.MELON_CHARGE_SPEED;
+        this.vx = this.facing * C.MELON_CHARGE_SPEED * this.diff.speed;
         if (this.stateT > 1.0) { this.state = 'pace'; this.stateT = 0; }
       }
       if (this.vx !== 0 && this.state !== 'windup') this.facing = Math.sign(this.vx);
